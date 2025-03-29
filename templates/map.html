@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Weather Prediction</title>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDfGghG6s5RryLKadxTEij5G1g39kib_pA&libraries=places"></script>
+    <script>
+        let map;
+        let marker;
+
+        function initMap() {
+            map = new google.maps.Map(document.getElementById('map'), {
+                center: { lat: 20.5937, lng: 78.9629 }, // Default: India
+                zoom: 5
+            });
+
+            map.addListener('click', (event) => {
+                placeMarker(event.latLng);
+            });
+        }
+
+        function placeMarker(location) {
+            if (marker) {
+                marker.setPosition(location);
+            } else {
+                marker = new google.maps.Marker({
+                    position: location,
+                    map: map
+                });
+            }
+
+            document.getElementById('lat').value = location.lat();
+            document.getElementById('lng').value = location.lng();
+        }
+
+        function predictTemperature() {
+            const lat = document.getElementById('lat').value;
+            const lng = document.getElementById('lng').value;
+
+            fetch('/predict_temp', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ lat: lat, lng: lng })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('result').innerHTML = `
+                        <h3>Predicted Temperature:</h3>
+                        <p>Mean Temperature: ${data.prediction.TMP_mean_day1} °C</p>
+                        <p>Max Temperature: ${data.prediction.TMP_max_day1} °C</p>
+                        <p>Min Temperature: ${data.prediction.TMP_min_day1} °C</p>
+                    `;
+                })
+                .catch(error => console.error('Error:', error));
+        }
+    </script>
+</head>
+<body onload="initMap()">
+    <h2>Select a location on the map to predict temperature:</h2>
+    <div id="map" style="width: 600px; height: 400px;"></div>
+    <br>
+    <label>Latitude:</label>
+    <input type="text" id="lat" readonly>
+    <label>Longitude:</label>
+    <input type="text" id="lng" readonly>
+    <button onclick="predictTemperature()">Predict Temperature</button>
+    <div id="result"></div>
+</body>
+</html>
